@@ -11,7 +11,7 @@ final class LHNetworkClientTests: XCTestCase {
     }
     
     func test_request_shouldSendCorrectRequestData() {
-        let sut = makeSUT()
+        let sut = URLSessionHttpClient()
         let fakeUrl = makeFakeURL()
         let fakeHeader = ["Key": "test"]
 
@@ -29,7 +29,7 @@ final class LHNetworkClientTests: XCTestCase {
     }
     
     func test_request_shouldSendCorrectHttpMethod() {
-        let sut = makeSUT()
+        let sut = URLSessionHttpClient()
 
         let exp = expectation(description: #function)
         URLProtocolStub.observeRequest { request in
@@ -100,7 +100,10 @@ final class LHNetworkClientTests: XCTestCase {
 
 private extension LHNetworkClientTests {
     func makeSUT() -> URLSessionHttpClient {
-        return URLSessionHttpClient()
+        let sut = URLSessionHttpClient()
+        checkForMemoryLeaks(instance: sut)
+        
+        return sut
     }
     
     func makeFakeURL() -> URL {

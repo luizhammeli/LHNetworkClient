@@ -1,3 +1,10 @@
+//
+//  URLSessionHttpClient.swift
+//
+//
+//  Created by Luiz Diniz Hammerli on 17/08/23.
+//
+
 import Combine
 import Foundation
 
@@ -21,7 +28,8 @@ public final class URLSessionHttpClient: HTTPClient {
         urlSession.dataTaskPublisher(for: request)
             .retry(1)
             .tryMap({ [weak self] data, response in
-                return try self!.mapResponseData(data: data, response: response) as T
+                guard let self = self else { throw HttpError.unknown }
+                return try self.mapResponseData(data: data, response: response) as T
             })
             .mapError(mapError)            
             .sink { [weak self] result in
