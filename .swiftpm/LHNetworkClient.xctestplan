@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "521AD7A1-AACA-4392-8F92-160D9D9EAE3E",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "LHNetworkClient",
+          "name" : "LHNetworkClient"
+        }
+      ]
+    },
+    "threadSanitizerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "LHNetworkClientTests",
+        "name" : "LHNetworkClientTests"
+      }
+    }
+  ],
+  "version" : 1
+}
