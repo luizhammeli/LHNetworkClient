@@ -43,7 +43,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:../LHNetworkClient copy.xctestplan"
+            reference = "container:../LHNetworkClient.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
