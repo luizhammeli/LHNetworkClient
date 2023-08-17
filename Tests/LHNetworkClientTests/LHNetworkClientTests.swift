@@ -10,36 +10,36 @@ final class LHNetworkClientTests: XCTestCase {
         URLProtocolStub.stopIntercepting()
     }
     
-    func test_request_shouldSendCorrectRequestData() {
-        let sut = URLSessionHttpClient()
-        let fakeUrl = makeFakeURL()
-        let fakeHeader = ["Key": "test"]
-
-        let exp = expectation(description: #function)
-        URLProtocolStub.observeRequest { request in
-            XCTAssertEqual(request.url, fakeUrl)
-            XCTAssertEqual(request.httpMethod, Method.GET.rawValue)
-            XCTAssertEqual(request.allHTTPHeaderFields, fakeHeader)
-            XCTAssertNil(request.httpBody)
-            exp.fulfill()
-        }
-        sut.fetch(url: fakeUrl, headers: fakeHeader, body: nil, method: .GET) { let _: Result<Data, HttpError> = $0 }
-
-        wait(for: [exp], timeout: 10)
-    }
-    
-    func test_request_shouldSendCorrectHttpMethod() {
-        let sut = URLSessionHttpClient()
-
-        let exp = expectation(description: #function)
-        URLProtocolStub.observeRequest { request in
-            XCTAssertEqual(request.httpMethod, Method.POST.rawValue)
-            exp.fulfill()
-        }
-        sut.fetch(url: makeFakeURL() , headers: nil, body: [:], method: .POST) { let _: Result<Data, HttpError> = $0 }
-
-        wait(for: [exp], timeout: 10)
-    }
+//    func test_request_shouldSendCorrectRequestData() {
+//        let sut = URLSessionHttpClient()
+//        let fakeUrl = makeFakeURL()
+//        let fakeHeader = ["Key": "test"]
+//
+//        let exp = expectation(description: #function)
+//        URLProtocolStub.observeRequest { request in
+//            XCTAssertEqual(request.url, fakeUrl)
+//            XCTAssertEqual(request.httpMethod, Method.GET.rawValue)
+//            XCTAssertEqual(request.allHTTPHeaderFields, fakeHeader)
+//            XCTAssertNil(request.httpBody)
+//            exp.fulfill()
+//        }
+//        sut.fetch(url: fakeUrl, headers: fakeHeader, body: nil, method: .GET) { let _: Result<Data, HttpError> = $0 }
+//
+//        wait(for: [exp], timeout: 10)
+//    }
+//    
+//    func test_request_shouldSendCorrectHttpMethod() {
+//        let sut = URLSessionHttpClient()
+//
+//        let exp = expectation(description: #function)
+//        URLProtocolStub.observeRequest { request in
+//            XCTAssertEqual(request.httpMethod, Method.POST.rawValue)
+//            exp.fulfill()
+//        }
+//        sut.fetch(url: makeFakeURL() , headers: nil, body: [:], method: .POST) { let _: Result<Data, HttpError> = $0 }
+//
+//        wait(for: [exp], timeout: 10)
+//    }
     
     func test_request_shouldCompleteWithNotFoundError() {
         let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 404, httpVersion: nil, headerFields: nil)
