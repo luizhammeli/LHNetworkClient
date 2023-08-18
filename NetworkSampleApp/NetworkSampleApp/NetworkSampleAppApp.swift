@@ -12,10 +12,15 @@ import LHNetworkClient
 struct NetworkSampleAppApp: App {
     var body: some Scene {
         WindowGroup {
-            let viewModel = ContentViewModel(client: URLSessionHttpClient())
-            NavigationView {
-                ContentView(viewModel: viewModel)
-            }
+            makeContentView()
+        }
+    }
+    
+    private func makeContentView() -> some View {
+        let service = ContentService(client: URLSessionHttpClient())
+        let viewModel = ContentViewModel(service: service)
+        return NavigationView {
+            ContentView(viewModel: viewModel)
         }
     }
 }

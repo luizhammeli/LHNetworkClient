@@ -32,9 +32,17 @@ struct ContentView: View {
     }
 }
 
-//struct ContentView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        ContentView(viewModel: <#ContentViewModel#>)
-//    }
-//}
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        let viewModel = ContentViewModel(service: PreviewServide())
+        ContentView(viewModel: viewModel)
+    }
+    
+    struct PreviewServide: ContentServiceProtocol {
+        func fetchEpisodes(completion: @escaping ([Episode]) -> Void) {
+            completion([.init(title: "Teste 1", id: 0, excerpt: "", imageURL: ""),
+                        .init(title: "Teste 2", id: 0, excerpt: "", imageURL: "")])
+        }
+    }
+}
 
