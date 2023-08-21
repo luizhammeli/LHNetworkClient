@@ -16,45 +16,44 @@ public final class URLSessionHttpClient: HTTPClient {
         self.urlSession = urlSession
     }
     
-    public func fetch<T: Codable>(url: URL, headers: [String: String]?, body: [String: Any]?, method: Method, completion: @escaping (Result<T, HttpError>) -> Void) {
-        var request = URLRequest(url: url)
-        request.httpMethod = method.rawValue
-        headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
+    public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
+        var request = URLRequest(url: provider.makeURLWithQueryItems())
+        request.httpMethod = provider.method.rawValue
+        provider.headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
         
-        debugPrint("URL: \(url)")
-        debugPrint("Headers: \(headers ?? [:])")
-        debugPrint("Method: \(method.rawValue)")
-        
-        if let body = body, let bodyData = try? JSONSerialization.data(withJSONObject: body, options: []) as Data, method != .GET {
-            debugPrint("Body: \(body)")
-            request.httpBody = bodyData
-        }
+        debugPrint("Base URL: \(provider.url)")
+        debugPrint("Headers: \(provider.headers ?? [:])")
+        debugPrint("Method: \(provider.method.rawValue)")
+        debugPrint("Query Items: \(provider.queryParams ?? [:])")
+        debugPrint("Complete URL: \(request.url?.description ?? "")")
+
+        request.httpBody = provider.makeBodyData()
         
         urlSession.dataTaskPublisher(for: request)
             .retry(1)
             .tryMap({ [weak self] data, response in
                 guard let self = self else { throw HttpError.unknown }
-                return try self.mapResponseData(data: data, response: response) as T
+                return try self.mapResponseData(data: data, response: response, decoder: provider.jsonDecoder ?? JSONDecoder()) as T
             })
             .mapError(mapError)            
             .sink { [weak self] result in
-                self?.mapCompletion(url: url, result: result, completion: completion)
+                self?.mapCompletion(url: request.url, result: result, completion: completion)
             } receiveValue: { decodedData in
                 completion(.success(decodedData))
             }.store(in: &subscription)
     }
     
-    private func mapCompletion<T: Codable>(url: URL, result: Subscribers.Completion<HttpError>, completion: @escaping (Result<T, HttpError>) -> Void) {
+    private func mapCompletion<T: Codable>(url: URL?, result: Subscribers.Completion<HttpError>, completion: @escaping (Result<T, HttpError>) -> Void) {
         switch result {
         case .finished:
-            debugPrint("Finished with Success: \(url)")
+            debugPrint("Finished with Success: \(url?.description ?? "")")
         case .failure(let error):
-            debugPrint("Finished with Error for URL: \(url) Error Code: \(error)")
+            debugPrint("Finished with Error for URL: \(url?.description ?? "") Error Code: \(error)")
             completion(.failure(error))
         }
     }
     
-    private func mapResponseData<T: Codable>(data: Data, response: URLResponse) throws -> T {
+    private func mapResponseData<T: Codable>(data: Data, response: URLResponse, decoder: JSONDecoder) throws -> T {
         if let statusCode = (response as? HTTPURLResponse)?.statusCode {
             if let error = StatusCodeValidator.checkStatusCode(statusCode: statusCode) {
                 debugPrint("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌")
@@ -74,7 +73,7 @@ public final class URLSessionHttpClient: HTTPClient {
                 } else {
                     debugPrint("json data malformed")
                 }
-                return try JSONDecoder().decode(T.self, from: data)
+                return try decoder.decode(T.self, from: data)
             } catch {
                 throw HttpError.invalidData
             }

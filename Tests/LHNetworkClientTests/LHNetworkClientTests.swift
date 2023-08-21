@@ -23,7 +23,21 @@ final class LHNetworkClientTests: XCTestCase {
             XCTAssertNil(request.httpBody)
             exp.fulfill()
         }
-        sut.fetch(url: fakeUrl, headers: fakeHeader, body: nil, method: .GET) { let _: Result<Data, HttpError> = $0 }
+        sut.fetch(provider: FakeProvider(url: fakeUrl, headers: fakeHeader, method: .GET)) { let _: Result<Data, HttpError> = $0 }
+
+        wait(for: [exp], timeout: 10)
+    }
+    
+    func test_request_shouldSendCorrectURLWithQueryParams() {
+        let sut = URLSessionHttpClient()        
+        let fakeProvider = FakeProvider(url: makeFakeURL(), queryParams: ["id": "1", "testeKey": "testValue"], method: .GET)
+
+        let exp = expectation(description: #function)
+        URLProtocolStub.observeRequest { request in
+            XCTAssertEqual(request.url, fakeProvider.makeURLWithQueryItems())
+            exp.fulfill()
+        }
+        sut.fetch(provider: fakeProvider) { let _: Result<Data, HttpError> = $0 }
 
         wait(for: [exp], timeout: 10)
     }
@@ -36,7 +50,8 @@ final class LHNetworkClientTests: XCTestCase {
             XCTAssertEqual(request.httpMethod, Method.POST.rawValue)
             exp.fulfill()
         }
-        sut.fetch(url: makeFakeURL() , headers: nil, body: [:], method: .POST) { let _: Result<Data, HttpError> = $0 }
+        
+        sut.fetch(provider: FakeProvider(url: makeFakeURL(), headers: nil, method: .POST)) { let _: Result<Data, HttpError> = $0 }
 
         wait(for: [exp], timeout: 10)
     }
@@ -109,15 +124,14 @@ private extension LHNetworkClientTests {
     func makeFakeURL() -> URL {
         return URL(string: "https://test.com")!
     }
-    
+
     func assertResult(with result: Result<FakeModel, HttpError>?, stub: Stub, file: StaticString = #filePath, line: UInt = #line) {
         var receivedResult: Result<FakeModel, HttpError>?
         let sut = makeSUT()
         
         let exp = expectation(description: #function)
         URLProtocolStub.stub(url: makeFakeURL(), response: stub.response, error: stub.error, data: stub.data)
-        
-        sut.fetch(url: makeFakeURL(), headers: nil, body: nil, method: .GET) {
+        sut.fetch(provider: FakeProvider(url: makeFakeURL(), method: .GET)) {
             receivedResult = $0
             exp.fulfill()
         }
