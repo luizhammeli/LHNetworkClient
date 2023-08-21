@@ -21,7 +21,12 @@ public final class URLSessionHttpClient: HTTPClient {
         request.httpMethod = method.rawValue
         headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
         
+        debugPrint("URL: \(url)")
+        debugPrint("Headers: \(headers ?? [:])")
+        debugPrint("Method: \(method.rawValue)")
+        
         if let body = body, let bodyData = try? JSONSerialization.data(withJSONObject: body, options: []) as Data, method != .GET {
+            debugPrint("Body: \(body)")
             request.httpBody = bodyData
         }
         
@@ -51,12 +56,18 @@ public final class URLSessionHttpClient: HTTPClient {
     
     private func mapResponseData<T: Codable>(data: Data, response: URLResponse) throws -> T {
         if let statusCode = (response as? HTTPURLResponse)?.statusCode {
-            debugPrint("Request StatusCode: \(statusCode)")
             if let error = StatusCodeValidator.checkStatusCode(statusCode: statusCode) {
+                debugPrint("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌")
+                debugPrint("Failure Request:")
+                debugPrint("Request StatusCode: \(statusCode)")
+                debugPrint("Request StatusCode Description Error: \(error)")
                 throw error
             }
-            
             do {
+                debugPrint("✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅")
+                debugPrint("Success Request:")
+                debugPrint("Request StatusCode: \(statusCode)")
+                debugPrint("Response Data: \(String(data: data, encoding: .utf8) ?? "")")
                 return try JSONDecoder().decode(T.self, from: data)
             } catch {
                 throw HttpError.invalidData
