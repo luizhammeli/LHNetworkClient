@@ -58,16 +58,22 @@ public final class URLSessionHttpClient: HTTPClient {
         if let statusCode = (response as? HTTPURLResponse)?.statusCode {
             if let error = StatusCodeValidator.checkStatusCode(statusCode: statusCode) {
                 debugPrint("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌")
-                debugPrint("Failure Request:")
+                debugPrint("Failure Request")
                 debugPrint("Request StatusCode: \(statusCode)")
                 debugPrint("Request StatusCode Description Error: \(error)")
                 throw error
             }
             do {
                 debugPrint("✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅")
-                debugPrint("Success Request:")
+                debugPrint("Success Request")
                 debugPrint("Request StatusCode: \(statusCode)")
-                debugPrint("Response Data: \(String(data: data, encoding: .utf8) ?? "")")
+                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
+                   let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) {
+                    debugPrint("Response Data:")
+                    debugPrint(String(decoding: jsonData, as: UTF8.self))
+                } else {
+                    debugPrint("json data malformed")
+                }
                 return try JSONDecoder().decode(T.self, from: data)
             } catch {
                 throw HttpError.invalidData
