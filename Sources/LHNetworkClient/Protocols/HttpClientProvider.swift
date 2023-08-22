@@ -19,8 +19,7 @@ public protocol HttpClientProvider {
 
 public extension HttpClientProvider {
     internal func makeBodyData() -> Data? {
-        if let body = body, let bodyData = try? JSONSerialization.data(withJSONObject: body, options: []) as Data {
-            debugPrint("Body: \(body)")
+        if let body = body, let bodyData = try? JSONSerialization.data(withJSONObject: body, options: []) as Data {            
             return bodyData
         }
         return nil

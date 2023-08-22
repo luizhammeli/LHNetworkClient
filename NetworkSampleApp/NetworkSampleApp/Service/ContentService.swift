@@ -21,9 +21,8 @@ final class ContentService: ContentServiceProtocol {
     
     func fetchEpisodes(completion: @escaping ([Episode]) -> Void) {
         guard let url = URL(string: "\(Enviroment.baseURL)episodes") else { return }
-        let headers = ["X-API-TOKEN": "1772bb7bc78941e2b51c9c67d17ee76e"]
-        
-        client.fetch(url: url, headers: headers, body: nil, method: .GET) { result in
+
+        client.fetch(provider: ContentProvider(url: url)) { result in
             let result: Result<[Episode], HttpError> = result
             completion((try? result.get()) ?? [])
         }

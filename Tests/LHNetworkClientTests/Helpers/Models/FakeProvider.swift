@@ -9,13 +9,13 @@ import Foundation
 @testable import LHNetworkClient
 
 struct FakeProvider: HttpClientProvider {
-    var jsonDecoder: JSONDecoder?
     var url: URL
     var baseURL: String?
     var queryParams: [String : String]?
     var headers: [String : String]?
     var body: [String : Any]?
     var method: LHNetworkClient.Method
+    var jsonDecoder: JSONDecoder?
     
     init(url: URL,
          baseURL: String? = nil,

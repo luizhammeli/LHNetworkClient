@@ -11,6 +11,8 @@ import Foundation
 public final class URLSessionHttpClient: HTTPClient {
     private var subscription: Set<AnyCancellable> = []
     private let urlSession: URLSession
+    private var lastReceivedStatusCode: Int?
+    var logger: NetworkLogger = DefaultNetworkLogger()
     
     public init(urlSession: URLSession = URLSession.shared) {
         self.urlSession = urlSession
@@ -20,12 +22,8 @@ public final class URLSessionHttpClient: HTTPClient {
         var request = URLRequest(url: provider.makeURLWithQueryItems())
         request.httpMethod = provider.method.rawValue
         provider.headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
-        
-        debugPrint("Base URL: \(provider.url)")
-        debugPrint("Headers: \(provider.headers ?? [:])")
-        debugPrint("Method: \(provider.method.rawValue)")
-        debugPrint("Query Items: \(provider.queryParams ?? [:])")
-        debugPrint("Complete URL: \(request.url?.description ?? "")")
+
+        logger.logRequest(provider: provider)
 
         request.httpBody = provider.makeBodyData()
         
@@ -46,9 +44,9 @@ public final class URLSessionHttpClient: HTTPClient {
     private func mapCompletion<T: Codable>(url: URL?, result: Subscribers.Completion<HttpError>, completion: @escaping (Result<T, HttpError>) -> Void) {
         switch result {
         case .finished:
-            debugPrint("Finished with Success: \(url?.description ?? "")")
+            lastReceivedStatusCode = nil
         case .failure(let error):
-            debugPrint("Finished with Error for URL: \(url?.description ?? "") Error Code: \(error)")
+            // NetworkResult<T>(result: .failure(error), statusCode: lastReceivedStatusCode ?? -1, defaultData: nil)
             completion(.failure(error))
         }
     }
@@ -56,24 +54,15 @@ public final class URLSessionHttpClient: HTTPClient {
     private func mapResponseData<T: Codable>(data: Data, response: URLResponse, decoder: JSONDecoder) throws -> T {
         if let statusCode = (response as? HTTPURLResponse)?.statusCode {
             if let error = StatusCodeValidator.checkStatusCode(statusCode: statusCode) {
-                debugPrint("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌")
-                debugPrint("Failure Request")
-                debugPrint("Request StatusCode: \(statusCode)")
-                debugPrint("Request StatusCode Description Error: \(error)")
+                self.lastReceivedStatusCode = statusCode
+                logger.logFailureRequest(error: error, statusCode: statusCode)
                 throw error
             }
             do {
-                debugPrint("✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅")
-                debugPrint("Success Request")
-                debugPrint("Request StatusCode: \(statusCode)")
-                if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
-                   let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) {
-                    debugPrint("Response Data:")
-                    debugPrint(String(decoding: jsonData, as: UTF8.self))
-                } else {
-                    debugPrint("json data malformed")
-                }
-                return try decoder.decode(T.self, from: data)
+                logger.logSuccessRequest(data: data, statusCode: statusCode)
+                let decodedData = try decoder.decode(T.self, from: data)
+                // NetworkResult(result: .success(decodedData), statusCode: statusCode, defaultData: data)
+                return decodedData
             } catch {
                 throw HttpError.invalidData
             }
@@ -93,4 +82,3 @@ public final class URLSessionHttpClient: HTTPClient {
         }
     }
 }
-

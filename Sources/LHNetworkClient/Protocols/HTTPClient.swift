@@ -9,4 +9,6 @@ import Foundation
 
 public protocol HTTPClient {
     func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void)
+    
+    // func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (NetworkResult<T>) -> Void)
 }
