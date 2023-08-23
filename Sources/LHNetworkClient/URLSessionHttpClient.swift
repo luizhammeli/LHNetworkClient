@@ -21,13 +21,15 @@ public final class URLSessionHttpClient: HTTPClient {
     public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
         let request = makeURLRequest(with: provider)
         
+        subscription.forEach { $0.cancel() }
+        
         urlSession.dataTaskPublisher(for: request)
             .retry(1)
             .tryMap({ [weak self] data, response in
                 guard let self = self else { throw HttpError.unknown }
                 return try self.mapResponseData(data: data, response: response, decoder: provider.jsonDecoder ?? JSONDecoder()) as T
             })
-            .mapError(mapError)            
+            .mapError(mapError)
             .sink { [weak self] result in
                 self?.mapCompletion(url: request.url, result: result, completion: completion)
             } receiveValue: { decodedData in
