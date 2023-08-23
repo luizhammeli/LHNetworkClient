@@ -19,13 +19,7 @@ public final class URLSessionHttpClient: HTTPClient {
     }
     
     public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
-        var request = URLRequest(url: provider.makeURLWithQueryItems())
-        request.httpMethod = provider.method.rawValue
-        provider.headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
-
-        logger.logRequest(provider: provider)
-
-        request.httpBody = provider.makeBodyData()
+        let request = makeURLRequest(with: provider)
         
         urlSession.dataTaskPublisher(for: request)
             .retry(1)
@@ -41,12 +35,23 @@ public final class URLSessionHttpClient: HTTPClient {
             }.store(in: &subscription)
     }
     
+    private func makeURLRequest(with provider: HttpClientProvider) -> URLRequest {
+        var request = URLRequest(url: provider.makeURLWithQueryItems())
+        request.httpMethod = provider.method.rawValue
+        provider.headers?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key) }
+
+        logger.logRequest(provider: provider)
+
+        request.httpBody = provider.makeBodyData()
+
+        return request
+    }
+    
     private func mapCompletion<T: Codable>(url: URL?, result: Subscribers.Completion<HttpError>, completion: @escaping (Result<T, HttpError>) -> Void) {
         switch result {
         case .finished:
             lastReceivedStatusCode = nil
         case .failure(let error):
-            // NetworkResult<T>(result: .failure(error), statusCode: lastReceivedStatusCode ?? -1, defaultData: nil)
             completion(.failure(error))
         }
     }
@@ -60,8 +65,7 @@ public final class URLSessionHttpClient: HTTPClient {
             }
             do {
                 logger.logSuccessRequest(data: data, statusCode: statusCode)
-                let decodedData = try decoder.decode(T.self, from: data)
-                // NetworkResult(result: .success(decodedData), statusCode: statusCode, defaultData: data)
+                let decodedData = try decoder.decode(T.self, from: data)                
                 return decodedData
             } catch {
                 throw HttpError.invalidData

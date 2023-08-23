@@ -41,6 +41,7 @@ final class DefaultNetworkLogger: NetworkLogger {
     }
     
     func logRequest(provider: HttpClientProvider) {
+        printer.print("Network Request Started 🛜")
         printer.print("Default URL: \(provider.url.description)")
         printer.print("Complete URL: \(provider.makeURLWithQueryItems())")
         printer.print("Headers: \(provider.headers ?? [:])")
