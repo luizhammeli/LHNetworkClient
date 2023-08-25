@@ -21,7 +21,9 @@ public final class URLSessionHttpClient: HTTPClient {
     public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
         let request = makeURLRequest(with: provider)
         
-        subscription.forEach { $0.cancel() }
+        if provider.cancelPreviousRequests {
+            subscription.forEach { $0.cancel() }
+        }
         
         urlSession.dataTaskPublisher(for: request)
             .retry(1)

@@ -15,6 +15,7 @@ public protocol HttpClientProvider {
     var body: [String: Any]? { get }
     var method: Method { get }
     var jsonDecoder: JSONDecoder? { get }
+    var cancelPreviousRequests: Bool { get }
 }
 
 public extension HttpClientProvider {

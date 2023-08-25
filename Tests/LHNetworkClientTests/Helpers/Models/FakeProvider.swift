@@ -9,6 +9,7 @@ import Foundation
 @testable import LHNetworkClient
 
 struct FakeProvider: HttpClientProvider {
+    var cancelPreviousRequests: Bool = true
     var url: URL
     var baseURL: String?
     var queryParams: [String : String]?
