@@ -9,6 +9,8 @@ import Foundation
 import LHNetworkClient
 
 final class ContentProvider: HttpClientProvider {
+    var cancelPreviousRequests: Bool = false
+    
     var url: URL
     
     var baseURL: String? {
