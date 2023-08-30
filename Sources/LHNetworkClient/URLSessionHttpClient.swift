@@ -19,6 +19,21 @@ public final class URLSessionHttpClient: HTTPClient {
     }
     
     public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
+        fetch(provider: provider) { result in
+            switch result {
+            case .success(let data):
+                if let decodedData = try? provider.jsonDecoder?.decode(T.self, from: data) {
+                    completion(.success(decodedData))
+                } else {
+                    completion(.failure(HttpError.invalidData))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    public func fetch(provider: HttpClientProvider, completion: @escaping (Result<Data, HttpError>) -> Void) {
         let request = makeURLRequest(with: provider)
         
         if provider.cancelPreviousRequests {
@@ -27,17 +42,19 @@ public final class URLSessionHttpClient: HTTPClient {
         
         urlSession.dataTaskPublisher(for: request)
             .retry(1)
-            .tryMap({ [weak self] data, response in
+            .tryMap { [weak self] data, response in
                 guard let self = self else { throw HttpError.unknown }
-                return try self.mapResponseData(data: data, response: response, decoder: provider.jsonDecoder ?? JSONDecoder()) as T
-            })
+                if let error = checkStatusCode(response: response, data: data) { throw error }
+                return data
+            }
             .mapError(mapError)
             .sink { [weak self] result in
                 self?.mapCompletion(url: request.url, result: result, completion: completion)
-            } receiveValue: { decodedData in
-                completion(.success(decodedData))
+            } receiveValue: { data in
+                completion(.success(data))
             }.store(in: &subscription)
     }
+    
     
     private func makeURLRequest(with provider: HttpClientProvider) -> URLRequest {
         var request = URLRequest(url: provider.makeURLWithQueryItems())
@@ -60,23 +77,18 @@ public final class URLSessionHttpClient: HTTPClient {
         }
     }
     
-    private func mapResponseData<T: Codable>(data: Data, response: URLResponse, decoder: JSONDecoder) throws -> T {
+    private func checkStatusCode(response: URLResponse, data: Data) -> HttpError? {
         if let statusCode = (response as? HTTPURLResponse)?.statusCode {
-            if let error = StatusCodeValidator.checkStatusCode(statusCode: statusCode) {
-                self.lastReceivedStatusCode = statusCode
+            if let error = StatusCodeValidator.getDescription(with: statusCode) {
                 logger.logFailureRequest(error: error, statusCode: statusCode)
-                throw error
-            }
-            do {
+                return error
+            } else {
                 logger.logSuccessRequest(data: data, statusCode: statusCode)
-                let decodedData = try decoder.decode(T.self, from: data)                
-                return decodedData
-            } catch {
-                throw HttpError.invalidData
+                return nil
             }
         }
         
-        throw HttpError.invalidRequest
+        return HttpError.invalidRequest
     }
     
     private func mapError(error: Error) -> HttpError {
