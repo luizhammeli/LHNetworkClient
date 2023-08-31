@@ -24,7 +24,7 @@ struct FakeProvider: HttpClientProvider {
          headers: [String : String]? = nil,
          body: [String : Any]? = nil,
          method: LHNetworkClient.Method,
-         jsonDecoder: JSONDecoder? = nil) {
+         jsonDecoder: JSONDecoder? = JSONDecoder()) {
         self.url = url
         self.baseURL = baseURL
         self.queryParams = queryParams

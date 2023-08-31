@@ -8,7 +8,7 @@
 import Foundation
 
 enum StatusCodeValidator {
-    static func checkStatusCode(statusCode: Int) -> HttpError? {
+    static func getDescription(with statusCode: Int) -> HttpError? {
         switch statusCode {
         case 200...299:
             return nil

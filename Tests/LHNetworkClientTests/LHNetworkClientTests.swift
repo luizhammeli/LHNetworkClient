@@ -110,7 +110,7 @@ final class LHNetworkClientTests: XCTestCase {
         let fakeData = try? JSONEncoder().encode(fakeModel)
         let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 200, httpVersion: nil, headerFields: nil)
         assertResult(with: .success(fakeModel), stub: .init(error: nil, response: fakeResponse, data: fakeData))
-    }        
+    }
 }
 
 private extension LHNetworkClientTests {
