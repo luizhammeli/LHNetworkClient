@@ -44,7 +44,7 @@ public final class URLSessionHttpClient: HTTPClient {
             .retry(1)
             .tryMap { [weak self] data, response in
                 guard let self = self else { throw HttpError.unknown }
-                if let error = checkStatusCode(response: response, data: data) { throw error }
+                if let error = self.checkStatusCode(response: response, data: data) { throw error }
                 return data
             }
             .mapError(mapError)
