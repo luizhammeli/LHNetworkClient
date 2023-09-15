@@ -12,7 +12,7 @@ options:
   xcodeVersion: "14.2"
   createIntermediateGroups: true
   developmentLanguage: "pt-BR"
-  bundleIdPrefix: br.com.comitando
+  bundleIdPrefix: br.com.luizhammerli
   deploymentTarget:
     iOS: 14.0
     macOS: 12.0
