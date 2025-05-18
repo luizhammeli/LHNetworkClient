@@ -17,7 +17,24 @@ public final class URLSessionHttpClient: HTTPClient {
     public init(urlSession: URLSession = URLSession.shared) {
         self.urlSession = urlSession
     }
-    
+
+    public func fetch<T: Codable>(provider: HttpClientProvider) async throws -> T {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            self?.fetch(provider: provider) { (result: Result<Data, HttpError>) in
+                switch result {
+                case .success(let data):
+                    if let decodedData = try? provider.jsonDecoder?.decode(T.self, from: data) {
+                        continuation.resume(with: .success(decodedData))
+                    } else {
+                        continuation.resume(throwing: HttpError.invalidData)
+                    }
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
     public func fetch<T: Codable>(provider: HttpClientProvider, completion: @escaping (Result<T, HttpError>) -> Void) {
         fetch(provider: provider) { result in
             switch result {
