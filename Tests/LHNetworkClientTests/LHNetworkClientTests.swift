@@ -95,6 +95,7 @@ final class LHNetworkClientTests: XCTestCase {
         assertResult(with: .failure(.invalidData), stub: .init(error: nil, response: fakeResponse, data: Data()))
     }
     
+
     func test_request_shouldCompleteWithInvalidRequestError() {
         let fakeResponse = URLResponse(url: makeFakeURL(), mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
         assertResult(with: .failure(.invalidRequest), stub: .init(error: nil, response: fakeResponse, data: nil))
@@ -110,6 +111,37 @@ final class LHNetworkClientTests: XCTestCase {
         let fakeData = try? JSONEncoder().encode(fakeModel)
         let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 200, httpVersion: nil, headerFields: nil)
         assertResult(with: .success(fakeModel), stub: .init(error: nil, response: fakeResponse, data: fakeData))
+    }
+
+    // MARK: Swift Concurrency Support 
+    func test_request_async_shouldCompleteWithUnauthorizedError() async throws {
+        let fakeError = HttpError.unauthorized
+        let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 401, httpVersion: nil, headerFields: nil)
+
+        do {
+            try await assertAsyncResult(with: nil, stub: .init(error: nil, response: fakeResponse, data: nil))
+        } catch {
+            XCTAssertEqual(fakeError, error as? HttpError)
+        }
+    }
+
+    func test_request_async_shouldCompleteWithServerError() async throws {
+        let fakeError = HttpError.serverError
+        let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 500, httpVersion: nil, headerFields: nil)
+
+        do {
+            try await assertAsyncResult(with: nil, stub: .init(error: nil, response: fakeResponse, data: nil))
+        } catch {
+            XCTAssertEqual(fakeError, error as? HttpError)
+        }
+    }
+
+    func test_request_async_shouldCompleteWithSuccess() async throws {
+        let fakeModel = FakeModel(id: 10)
+        let fakeData = try? JSONEncoder().encode(fakeModel)
+        let fakeResponse = HTTPURLResponse(url: makeFakeURL(), statusCode: 200, httpVersion: nil, headerFields: nil)
+
+        try await assertAsyncResult(with: fakeModel, stub: .init(error: nil, response: fakeResponse, data: fakeData))
     }
 }
 
@@ -137,6 +169,17 @@ private extension LHNetworkClientTests {
         }
 
         wait(for: [exp], timeout: 1)
+        XCTAssertEqual(receivedResult, result, file: file, line: line)
+    }
+
+    func assertAsyncResult(with result: FakeModel?, stub: Stub, file: StaticString = #filePath, line: UInt = #line) async throws {
+        var receivedResult: FakeModel?
+        let sut = makeSUT()
+
+        URLProtocolStub.stub(url: makeFakeURL(), response: stub.response, error: stub.error, data: stub.data)
+        
+        receivedResult = try await sut.fetch(provider: FakeProvider(url: makeFakeURL(), method: .GET))
+
         XCTAssertEqual(receivedResult, result, file: file, line: line)
     }
 }

@@ -9,7 +9,7 @@ import Foundation
 import LHNetworkClient
 
 protocol ContentServiceProtocol {
-    func fetchEpisodes(completion: @escaping ([Episode]) -> Void)
+    func fetchEpisodes() async throws -> [Episode]
 }
 
 final class ContentService: ContentServiceProtocol {
@@ -18,13 +18,11 @@ final class ContentService: ContentServiceProtocol {
     init(client: HTTPClient) {
         self.client = client
     }
-    
-    func fetchEpisodes(completion: @escaping ([Episode]) -> Void) {
-        guard let url = URL(string: "\(Enviroment.baseURL)episodes") else { return }
 
-        client.fetch(provider: ContentProvider(url: url)) { result in
-            let result: Result<[Episode], HttpError> = result
-            completion((try? result.get()) ?? [])
-        }
+    func fetchEpisodes() async throws -> [Episode] {
+        guard let url = URL(string: "\(Enviroment.baseURL)episodes") else { throw NSError() }
+
+        let value: [Episode] = try await client.fetch(provider: ContentProvider(url: url))
+        return value
     }
 }

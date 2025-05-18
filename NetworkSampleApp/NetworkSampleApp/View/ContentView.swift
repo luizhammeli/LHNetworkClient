@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @ObservedObject var viewModel: ContentViewModel
+    @State var viewModel: ContentViewModel
     
     init(viewModel: ContentViewModel) {
         self.viewModel = viewModel
@@ -39,9 +39,11 @@ struct ContentView_Previews: PreviewProvider {
     }
     
     struct PreviewServide: ContentServiceProtocol {
-        func fetchEpisodes(completion: @escaping ([Episode]) -> Void) {
-            completion([.init(title: "Teste 1", id: 0, excerpt: "", imageURL: ""),
-                        .init(title: "Teste 2", id: 0, excerpt: "", imageURL: "")])
+        func fetchEpisodes() async throws -> [Episode] {
+            [
+                .init(title: "Teste 1", id: 0, excerpt: "", imageURL: ""),
+                .init(title: "Teste 2", id: 0, excerpt: "", imageURL: "")
+            ]
         }
     }
 }

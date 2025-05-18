@@ -7,27 +7,26 @@
 
 import Foundation
 
+@MainActor
 protocol ContentViewModelProtocol {
     func fetchEpisodes()
 }
 
-final class ContentViewModel: ObservableObject, ContentViewModelProtocol {
-    @Published private(set) var episodes: [Episode] = []
-    @Published private(set) var isLoading: Bool = false
-    private var service: ContentServiceProtocol
+@Observable
+final class ContentViewModel: ContentViewModelProtocol {
+    private(set) var episodes: [Episode] = []
+    private(set) var isLoading: Bool = false
+    private let service: ContentServiceProtocol
     
     init(service: ContentServiceProtocol) {
         self.service = service
     }
-    
+
     func fetchEpisodes() {
         isLoading = true
-        
-        service.fetchEpisodes { [weak self] episodes in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                self?.episodes = episodes
-            }
+        Task {
+            episodes = (try? await service.fetchEpisodes()) ?? []
+            isLoading = false
         }
     }
 }
